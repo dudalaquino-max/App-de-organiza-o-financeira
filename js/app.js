@@ -273,14 +273,30 @@
     });
   }
 
-  function entriesForCategory(category) {
-    const all = state[currentContext][category.id];
+  function entriesForCategory(category, context = currentContext, month = currentMonth) {
+    const all = state[context][category.id];
     if (category.fixed) return all;
-    return all.filter((e) => e.date && e.date.slice(0, 7) === currentMonth);
+    return all.filter((e) => e.date && e.date.slice(0, 7) === month);
   }
 
-  function categoryTotal(category) {
-    return entriesForCategory(category).reduce((sum, e) => sum + e.value, 0);
+  function categoryTotal(category, context = currentContext, month = currentMonth) {
+    return entriesForCategory(category, context, month).reduce((sum, e) => sum + e.value, 0);
+  }
+
+  function getContextTotals(context, month = currentMonth) {
+    const income = CATEGORIES.filter((c) => c.type === "income").reduce(
+      (sum, c) => sum + categoryTotal(c, context, month),
+      0
+    );
+    const expense = CATEGORIES.filter((c) => c.type === "expense").reduce(
+      (sum, c) => sum + categoryTotal(c, context, month),
+      0
+    );
+    return { income, expense, balance: income - expense };
+  }
+
+  function getBusinessTransfer(month = currentMonth) {
+    return Math.max(0, getContextTotals("empresa", month).balance);
   }
 
   const board = document.getElementById("board");
@@ -425,8 +441,26 @@
     article.querySelector(".category-total").textContent = formatCurrency(categoryTotal(category));
   }
 
+  const transferBanner = document.getElementById("business-transfer-banner");
+  const transferDetailEl = document.getElementById("transfer-detail");
+  const transferValueEl = document.getElementById("transfer-value");
+
+  function updateTransferBanner(transfer) {
+    if (currentContext !== "pessoal") {
+      transferBanner.hidden = true;
+      return;
+    }
+    transferBanner.hidden = false;
+    transferValueEl.textContent = formatCurrency(transfer);
+    const businessBalance = getContextTotals("empresa").balance;
+    transferDetailEl.textContent =
+      businessBalance < 0
+        ? "A empresa está com saldo negativo neste mês — nenhum repasse automático."
+        : "Saldo do mês empresarial (créditos − despesas), somado automaticamente ao saldo pessoal.";
+  }
+
   function renderSummary() {
-    const income = CATEGORIES.filter((c) => c.type === "income").reduce(
+    const baseIncome = CATEGORIES.filter((c) => c.type === "income").reduce(
       (sum, c) => sum + categoryTotal(c),
       0
     );
@@ -434,6 +468,8 @@
       (sum, c) => sum + categoryTotal(c),
       0
     );
+    const transfer = currentContext === "pessoal" ? getBusinessTransfer() : 0;
+    const income = baseIncome + transfer;
     const balance = income - expense;
 
     document.getElementById("summary-income").textContent = formatCurrency(income);
@@ -442,6 +478,8 @@
     const balanceEl = document.getElementById("summary-balance");
     balanceEl.textContent = formatCurrency(balance);
     balanceEl.closest(".summary-card").classList.toggle("negative", balance < 0);
+
+    updateTransferBanner(transfer);
   }
 
   const reportCardTemplate = document.getElementById("report-card-template");
@@ -487,11 +525,43 @@
     return node;
   }
 
+  function buildTransferReportCard() {
+    const node = reportCardTemplate.content.cloneNode(true);
+    const article = node.querySelector(".report-card");
+    article.classList.add("type-income");
+    article.style.setProperty("--accent-color", "var(--color-fixed-accent)");
+
+    node.querySelector(".category-title").textContent = "Repasse da Empresa";
+
+    const transfer = getBusinessTransfer();
+    const list = node.querySelector(".report-list");
+    const hint = node.querySelector(".empty-hint");
+    hint.style.display = "none";
+
+    const li = document.createElement("li");
+    li.className = "report-row";
+    const specEl = document.createElement("span");
+    specEl.className = "report-spec";
+    specEl.textContent = "Saldo empresarial do mês";
+    const valueEl = document.createElement("span");
+    valueEl.className = "report-value";
+    valueEl.textContent = formatCurrency(transfer);
+    li.appendChild(specEl);
+    li.appendChild(valueEl);
+    list.appendChild(li);
+
+    node.querySelector(".category-total").textContent = formatCurrency(transfer);
+    return node;
+  }
+
   function renderReport() {
     reportBoard.innerHTML = "";
     CATEGORIES.forEach((category) => {
       reportBoard.appendChild(buildReportCard(category));
     });
+    if (currentContext === "pessoal") {
+      reportBoard.appendChild(buildTransferReportCard());
+    }
   }
 
   function render() {

@@ -279,6 +279,50 @@ body {
 .summary-card.balance .summary-value { color: var(--color-primary); }
 .summary-card.balance.negative .summary-value { color: var(--color-expense); }
 
+.transfer-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--color-income-bg);
+  border: 1px solid var(--color-income);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-bottom: 18px;
+}
+
+#business-transfer-banner[hidden] {
+  display: none;
+}
+
+.transfer-icon {
+  font-size: 1.4rem;
+}
+
+.transfer-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.transfer-text strong {
+  font-size: 0.95rem;
+}
+
+.transfer-text span {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+}
+
+.transfer-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-income);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 .board {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
