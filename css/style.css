@@ -27,6 +27,28 @@
   }
 }
 
+:root[data-theme="dark"] {
+  --color-bg: #12151c;
+  --color-surface: #1b2028;
+  --color-border: #2a3140;
+  --color-text: #e7ebf1;
+  --color-muted: #9aa4b2;
+  --color-income-bg: #12301f;
+  --color-expense-bg: #341717;
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --color-bg: #f4f6f9;
+  --color-surface: #ffffff;
+  --color-border: #e2e6ec;
+  --color-text: #1f2733;
+  --color-muted: #6b7684;
+  --color-income-bg: #e7f7ef;
+  --color-expense-bg: #fcebeb;
+  color-scheme: light;
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -581,6 +603,26 @@ body {
   cursor: pointer;
   box-shadow: var(--shadow);
   z-index: 30;
+}
+
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  z-index: 40;
+}
+
+.theme-toggle:hover {
+  filter: brightness(1.08);
 }
 
 .chat-toggle:hover {

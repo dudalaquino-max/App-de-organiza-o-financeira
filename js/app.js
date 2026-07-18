@@ -4,6 +4,32 @@
   const STORAGE_KEY = "financeApp.v1";
   const AUTH_KEY = "financeApp.auth";
   const SESSION_KEY = "financeApp.session";
+  const THEME_KEY = "financeApp.theme";
+
+  const themeToggle = document.getElementById("theme-toggle");
+
+  function getSystemPrefersDark() {
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+
+  function getEffectiveTheme() {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved === "dark" || saved === "light") return saved;
+    return getSystemPrefersDark() ? "dark" : "light";
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    themeToggle.textContent = theme === "dark" ? "☀️" : "🌙";
+  }
+
+  applyTheme(getEffectiveTheme());
+
+  themeToggle.addEventListener("click", () => {
+    const next = getEffectiveTheme() === "dark" ? "light" : "dark";
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
+  });
 
   async function hashPassword(password) {
     const bytes = new TextEncoder().encode(password);
