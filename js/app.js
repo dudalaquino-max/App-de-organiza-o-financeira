@@ -417,9 +417,9 @@
     form.addEventListener("submit", (ev) => {
       ev.preventDefault();
       const description = specSelect.value;
-      const value = parseFloat(form.querySelector(".entry-value").value);
+      const value = parseAmount(form.querySelector(".entry-value").value);
       const date = form.querySelector(".entry-date").value;
-      if (!description || description === NEW_SPEC_VALUE || !value || value <= 0 || !date) return;
+      if (!description || description === NEW_SPEC_VALUE || !value || !date) return;
 
       state[currentContext][category.id].push({
         id: crypto.randomUUID(),
@@ -695,7 +695,7 @@
     "caiu",
   ];
 
-  function parseChatValue(text) {
+  function parseAmount(text) {
     const match = text.match(/\d[\d.,]*\d|\d/);
     if (!match) return null;
     let raw = match[0];
@@ -774,7 +774,7 @@
 
   function handleChatMessage(text) {
     const lowerText = text.toLowerCase();
-    const value = parseChatValue(text);
+    const value = parseAmount(text);
     const type = detectChatType(lowerText);
     const context = detectChatContext(lowerText);
 
