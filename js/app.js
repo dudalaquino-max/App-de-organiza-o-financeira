@@ -578,6 +578,175 @@
     renderReport();
   }
 
+  const chatToggle = document.getElementById("chat-toggle");
+  const chatPanel = document.getElementById("chat-panel");
+  const chatClose = document.getElementById("chat-close");
+  const chatMessages = document.getElementById("chat-messages");
+  const chatForm = document.getElementById("chat-form");
+  const chatInput = document.getElementById("chat-input");
+
+  function addChatMessage(text, sender) {
+    const div = document.createElement("div");
+    div.className = `chat-message ${sender}`;
+    div.textContent = text;
+    chatMessages.appendChild(div);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  let chatGreeted = false;
+
+  chatToggle.addEventListener("click", () => {
+    chatPanel.hidden = !chatPanel.hidden;
+    if (!chatPanel.hidden) {
+      if (!chatGreeted) {
+        addChatMessage(
+          "Oi! Me conta o que você gastou ou recebeu, tipo:\n\"gastei 45 no mercado\"\n\"recebi 3000 de salário\"\n\"paguei 120 de luz\"",
+          "bot"
+        );
+        chatGreeted = true;
+      }
+      chatInput.focus();
+    }
+  });
+
+  chatClose.addEventListener("click", () => {
+    chatPanel.hidden = true;
+  });
+
+  const EXPENSE_WORDS = ["gastei", "gasto", "paguei", "pagar", "comprei", "debitei", "saiu", "despesa"];
+  const INCOME_WORDS = [
+    "recebi",
+    "receber",
+    "ganhei",
+    "ganho",
+    "entrou",
+    "faturei",
+    "faturamento",
+    "vendi",
+    "receita",
+    "credito",
+    "crédito",
+    "renda",
+    "caiu",
+  ];
+
+  function parseChatValue(text) {
+    const match = text.match(/(\d{1,3}(?:\.\d{3})+,\d{2}|\d+,\d{1,2}|\d+\.\d{1,2}|\d+)/);
+    if (!match) return null;
+    let raw = match[1];
+    if (raw.includes(",")) {
+      raw = raw.replace(/\./g, "").replace(",", ".");
+    }
+    const value = parseFloat(raw);
+    return !isNaN(value) && value > 0 ? value : null;
+  }
+
+  function detectChatType(lowerText) {
+    const hasExpense = EXPENSE_WORDS.some((w) => lowerText.includes(w));
+    const hasIncome = INCOME_WORDS.some((w) => lowerText.includes(w));
+    if (hasExpense && !hasIncome) return "expense";
+    if (hasIncome && !hasExpense) return "income";
+    return null;
+  }
+
+  function detectChatContext(lowerText) {
+    if (/\bempresa\b|\bempresarial\b/.test(lowerText)) return "empresa";
+    if (/\bpessoal\b/.test(lowerText)) return "pessoal";
+    return currentContext;
+  }
+
+  function detectChatSpec(lowerText, context, type) {
+    const candidateCategoryIds = CATEGORIES.filter((c) => c.type === type).map((c) => c.id);
+
+    for (const catId of candidateCategoryIds) {
+      for (const spec of specsState[context][catId]) {
+        if (lowerText.includes(spec.toLowerCase())) {
+          return { categoryId: catId, spec, isNew: false };
+        }
+      }
+    }
+
+    const prepMatch = lowerText.match(/\b(?:em|no|na|de|do|da|com)\s+([a-zà-ú0-9/\s]+)/i);
+    if (!prepMatch) return null;
+
+    let candidate = prepMatch[1]
+      .replace(/\d+(?:[.,]\d+)?/g, "")
+      .replace(/\b(empresa|empresarial|pessoal)\b/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!candidate) return null;
+
+    const name = candidate.charAt(0).toUpperCase() + candidate.slice(1);
+    const categoryId = type === "income" ? "variableIncome" : "variableExpense";
+    return { categoryId, spec: name, isNew: true };
+  }
+
+  function handleChatMessage(text) {
+    const lowerText = text.toLowerCase();
+    const value = parseChatValue(text);
+    const type = detectChatType(lowerText);
+    const context = detectChatContext(lowerText);
+
+    if (!value) {
+      addChatMessage("Não encontrei um valor. Tente algo como: \"gastei 45 no mercado\".", "bot");
+      return;
+    }
+    if (!type) {
+      addChatMessage(
+        "Foi um ganho ou um gasto? Use palavras como \"gastei\"/\"paguei\" para despesa ou \"recebi\"/\"ganhei\" para crédito.",
+        "bot"
+      );
+      return;
+    }
+
+    const result = detectChatSpec(lowerText, context, type);
+    if (!result) {
+      addChatMessage(
+        "Não entendi em que categoria. Tente: \"gastei 45 no mercado\" ou \"paguei 100 de luz\".",
+        "bot"
+      );
+      return;
+    }
+
+    const { categoryId, spec, isNew } = result;
+    if (isNew) {
+      const specs = specsState[context][categoryId];
+      const exists = specs.some((s) => s.toLowerCase() === spec.toLowerCase());
+      if (!exists) {
+        specs.push(spec);
+        saveSpecs();
+      }
+    }
+
+    const today = new Date().toISOString().slice(0, 10);
+    state[context][categoryId].push({
+      id: crypto.randomUUID(),
+      description: spec,
+      value,
+      date: today,
+    });
+    saveState();
+    render();
+
+    const category = CATEGORIES.find((c) => c.id === categoryId);
+    const contextLabel = context === "empresa" ? "Empresa" : "Pessoal";
+    addChatMessage(
+      `✅ Registrei ${type === "income" ? "um crédito" : "uma despesa"} de ${formatCurrency(
+        value
+      )} em "${spec}" (${contextLabel} · ${category.title}).`,
+      "bot"
+    );
+  }
+
+  chatForm.addEventListener("submit", (ev) => {
+    ev.preventDefault();
+    const text = chatInput.value.trim();
+    if (!text) return;
+    addChatMessage(text, "user");
+    chatInput.value = "";
+    handleChatMessage(text);
+  });
+
   if (getAuth() && sessionStorage.getItem(SESSION_KEY) === "1") {
     showApp();
   } else {

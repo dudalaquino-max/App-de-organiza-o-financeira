@@ -121,6 +121,20 @@
   </article>
 </template>
 
+<button type="button" id="chat-toggle" class="chat-toggle" aria-label="Abrir chat de lançamento rápido">💬</button>
+
+<div id="chat-panel" class="chat-panel" hidden>
+  <header class="chat-header">
+    <span>💬 Lançamento rápido</span>
+    <button type="button" id="chat-close" class="chat-close" aria-label="Fechar chat">✕</button>
+  </header>
+  <div class="chat-messages" id="chat-messages"></div>
+  <form id="chat-form" class="chat-form">
+    <input type="text" id="chat-input" placeholder="Ex: gastei 45 no mercado" autocomplete="off" maxlength="140">
+    <button type="submit" class="btn-add">Enviar</button>
+  </form>
+</div>
+
 </div>
 
 <script src="js/app.js"></script>
