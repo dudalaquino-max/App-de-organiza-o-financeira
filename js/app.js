@@ -158,6 +158,47 @@
 
   const CONTEXTS = ["empresa", "pessoal"];
 
+  const SPECS_KEY = "financeApp.specs";
+
+  const DEFAULT_SPECS = {
+    empresa: {
+      fixedIncome: [],
+      fixedExpense: ["Água", "Luz"],
+      variableIncome: [],
+      variableExpense: [],
+    },
+    pessoal: {
+      fixedIncome: [],
+      fixedExpense: ["Água", "Luz"],
+      variableIncome: [],
+      variableExpense: ["Mercado", "Gasolina/Uber", "Lazer", "Presentes", "iFood"],
+    },
+  };
+
+  function loadSpecs() {
+    let raw;
+    try {
+      raw = JSON.parse(localStorage.getItem(SPECS_KEY));
+    } catch (e) {
+      raw = null;
+    }
+    const specs = {};
+    CONTEXTS.forEach((ctx) => {
+      specs[ctx] = {};
+      CATEGORIES.forEach((c) => {
+        const saved = raw && raw[ctx] && Array.isArray(raw[ctx][c.id]) ? raw[ctx][c.id] : null;
+        specs[ctx][c.id] = saved || DEFAULT_SPECS[ctx][c.id].slice();
+      });
+    });
+    return specs;
+  }
+
+  function saveSpecs() {
+    localStorage.setItem(SPECS_KEY, JSON.stringify(specsState));
+  }
+
+  const specsState = loadSpecs();
+
   function emptyContextData() {
     const data = {};
     CATEGORIES.forEach((c) => (data[c.id] = []));
@@ -206,6 +247,25 @@
     });
   });
 
+  let currentView = "entries";
+  const reportBoard = document.getElementById("report-board");
+
+  function applyViewVisibility() {
+    board.hidden = currentView !== "entries";
+    reportBoard.hidden = currentView !== "report";
+  }
+
+  document.querySelectorAll(".view-tab").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      currentView = btn.dataset.view;
+      document.querySelectorAll(".view-tab").forEach((b) => {
+        b.classList.toggle("active", b === btn);
+        b.setAttribute("aria-selected", b === btn ? "true" : "false");
+      });
+      applyViewVisibility();
+    });
+  });
+
   function formatCurrency(value) {
     return value.toLocaleString("pt-BR", {
       style: "currency",
@@ -226,6 +286,37 @@
   const board = document.getElementById("board");
   const cardTemplate = document.getElementById("category-card-template");
 
+  const NEW_SPEC_VALUE = "__new__";
+
+  function populateSpecSelect(select, category) {
+    const previousValue = select.value;
+    select.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "Selecione a especificação";
+    placeholder.disabled = true;
+    select.appendChild(placeholder);
+
+    specsState[currentContext][category.id].forEach((spec) => {
+      const opt = document.createElement("option");
+      opt.value = spec;
+      opt.textContent = spec;
+      select.appendChild(opt);
+    });
+
+    const newOpt = document.createElement("option");
+    newOpt.value = NEW_SPEC_VALUE;
+    newOpt.textContent = "+ Criar nova especificação";
+    select.appendChild(newOpt);
+
+    if (previousValue && specsState[currentContext][category.id].includes(previousValue)) {
+      select.value = previousValue;
+    } else {
+      placeholder.selected = true;
+    }
+  }
+
   function buildCard(category) {
     const node = cardTemplate.content.cloneNode(true);
     const article = node.querySelector(".category-card");
@@ -236,6 +327,26 @@
     node.querySelector(".category-title").textContent = category.title;
 
     const form = node.querySelector(".entry-form");
+    const specSelect = form.querySelector(".entry-description");
+    populateSpecSelect(specSelect, category);
+
+    specSelect.addEventListener("change", () => {
+      if (specSelect.value !== NEW_SPEC_VALUE) return;
+      const name = (window.prompt("Nome da nova especificação:") || "").trim();
+      if (!name) {
+        populateSpecSelect(specSelect, category);
+        return;
+      }
+      const specs = specsState[currentContext][category.id];
+      const exists = specs.some((s) => s.toLowerCase() === name.toLowerCase());
+      if (!exists) {
+        specs.push(name);
+        saveSpecs();
+      }
+      populateSpecSelect(specSelect, category);
+      specSelect.value = exists ? specs.find((s) => s.toLowerCase() === name.toLowerCase()) : name;
+    });
+
     const dateInput = form.querySelector(".entry-date");
     dateInput.value = category.fixed
       ? `${currentMonth}-01`
@@ -243,10 +354,10 @@
 
     form.addEventListener("submit", (ev) => {
       ev.preventDefault();
-      const description = form.querySelector(".entry-description").value.trim();
+      const description = specSelect.value;
       const value = parseFloat(form.querySelector(".entry-value").value);
       const date = form.querySelector(".entry-date").value;
-      if (!description || !value || value <= 0 || !date) return;
+      if (!description || description === NEW_SPEC_VALUE || !value || value <= 0 || !date) return;
 
       state[currentContext][category.id].push({
         id: crypto.randomUUID(),
@@ -333,6 +444,56 @@
     balanceEl.closest(".summary-card").classList.toggle("negative", balance < 0);
   }
 
+  const reportCardTemplate = document.getElementById("report-card-template");
+
+  function buildReportCard(category) {
+    const node = reportCardTemplate.content.cloneNode(true);
+    const article = node.querySelector(".report-card");
+    article.classList.add(`type-${category.type}`);
+    article.style.setProperty("--accent-color", category.accent);
+
+    node.querySelector(".category-title").textContent = category.title;
+
+    const entries = entriesForCategory(category);
+    const bySpec = {};
+    entries.forEach((e) => {
+      bySpec[e.description] = (bySpec[e.description] || 0) + e.value;
+    });
+    const rows = Object.entries(bySpec).sort((a, b) => b[1] - a[1]);
+
+    const list = node.querySelector(".report-list");
+    const hint = node.querySelector(".empty-hint");
+    hint.style.display = rows.length ? "none" : "block";
+
+    rows.forEach(([spec, total]) => {
+      const li = document.createElement("li");
+      li.className = "report-row";
+
+      const specEl = document.createElement("span");
+      specEl.className = "report-spec";
+      specEl.textContent = spec;
+
+      const valueEl = document.createElement("span");
+      valueEl.className = "report-value";
+      valueEl.textContent = formatCurrency(total);
+
+      li.appendChild(specEl);
+      li.appendChild(valueEl);
+      list.appendChild(li);
+    });
+
+    node.querySelector(".category-total").textContent = formatCurrency(categoryTotal(category));
+
+    return node;
+  }
+
+  function renderReport() {
+    reportBoard.innerHTML = "";
+    CATEGORIES.forEach((category) => {
+      reportBoard.appendChild(buildReportCard(category));
+    });
+  }
+
   function render() {
     board.innerHTML = "";
     CATEGORIES.forEach((category) => {
@@ -344,6 +505,7 @@
       fillEntryList(article, category);
     });
     renderSummary();
+    renderReport();
   }
 
   if (getAuth() && sessionStorage.getItem(SESSION_KEY) === "1") {

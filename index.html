@@ -48,6 +48,11 @@
     <button class="context-tab active" data-context="empresa" role="tab" aria-selected="true">🏢 Empresa</button>
     <button class="context-tab" data-context="pessoal" role="tab" aria-selected="false">🙋 Pessoal</button>
   </nav>
+
+  <nav class="view-tabs" role="tablist">
+    <button class="view-tab active" data-view="entries" role="tab" aria-selected="true">📋 Lançamentos</button>
+    <button class="view-tab" data-view="report" role="tab" aria-selected="false">📊 Relatório do mês</button>
+  </nav>
 </header>
 
 <main id="app-main">
@@ -71,6 +76,10 @@
     <!-- Category cards are injected by js/app.js -->
   </section>
 
+  <section class="report-board" id="report-board" hidden>
+    <!-- Report cards are injected by js/app.js -->
+  </section>
+
 </main>
 
 <template id="category-card-template">
@@ -81,13 +90,24 @@
     </header>
 
     <form class="entry-form">
-      <input type="text" class="entry-description" placeholder="Descrição" required maxlength="80">
+      <select class="entry-description" required></select>
       <input type="number" class="entry-value" placeholder="Valor (R$)" step="0.01" min="0.01" required>
       <input type="date" class="entry-date" required>
       <button type="submit" class="btn-add">Adicionar</button>
     </form>
 
     <ul class="entry-list"></ul>
+    <p class="empty-hint">Nenhum lançamento neste mês.</p>
+  </article>
+</template>
+
+<template id="report-card-template">
+  <article class="report-card">
+    <header class="category-header">
+      <h2 class="category-title"></h2>
+      <span class="category-total"></span>
+    </header>
+    <ul class="report-list"></ul>
     <p class="empty-hint">Nenhum lançamento neste mês.</p>
   </article>
 </template>
