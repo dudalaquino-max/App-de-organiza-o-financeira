@@ -2,6 +2,128 @@
   "use strict";
 
   const STORAGE_KEY = "financeApp.v1";
+  const AUTH_KEY = "financeApp.auth";
+  const SESSION_KEY = "financeApp.session";
+
+  async function hashPassword(password) {
+    const bytes = new TextEncoder().encode(password);
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    return Array.from(new Uint8Array(digest))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  function getAuth() {
+    try {
+      return JSON.parse(localStorage.getItem(AUTH_KEY));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setAuth(username, passHash) {
+    localStorage.setItem(AUTH_KEY, JSON.stringify({ username, passHash }));
+  }
+
+  const authScreen = document.getElementById("auth-screen");
+  const appShell = document.getElementById("app-shell");
+  const authForm = document.getElementById("auth-form");
+  const authUsername = document.getElementById("auth-username");
+  const authPassword = document.getElementById("auth-password");
+  const authPasswordConfirm = document.getElementById("auth-password-confirm");
+  const authConfirmLabel = document.getElementById("auth-confirm-label");
+  const authSubtitle = document.getElementById("auth-subtitle");
+  const authSubmit = document.getElementById("auth-submit");
+  const authError = document.getElementById("auth-error");
+  const authResetLink = document.getElementById("auth-reset-link");
+  const currentUsernameEl = document.getElementById("current-username");
+  const logoutBtn = document.getElementById("logout-btn");
+
+  function isSetupMode() {
+    return !getAuth();
+  }
+
+  function refreshAuthFormMode() {
+    const setup = isSetupMode();
+    authError.textContent = "";
+    if (setup) {
+      authSubtitle.textContent = "Crie seu acesso para começar.";
+      authSubmit.textContent = "Criar acesso";
+      authPasswordConfirm.required = true;
+      authConfirmLabel.style.display = "";
+      authPasswordConfirm.style.display = "";
+      authPassword.autocomplete = "new-password";
+    } else {
+      authSubtitle.textContent = "Entre com seu usuário e senha.";
+      authSubmit.textContent = "Entrar";
+      authPasswordConfirm.required = false;
+      authConfirmLabel.style.display = "none";
+      authPasswordConfirm.style.display = "none";
+      authPassword.autocomplete = "current-password";
+    }
+  }
+
+  function showApp() {
+    const auth = getAuth();
+    authScreen.hidden = true;
+    appShell.hidden = false;
+    currentUsernameEl.textContent = auth ? auth.username : "";
+    render();
+  }
+
+  function showAuthScreen() {
+    appShell.hidden = true;
+    authScreen.hidden = false;
+    authForm.reset();
+    refreshAuthFormMode();
+    authUsername.focus();
+  }
+
+  authForm.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    authError.textContent = "";
+    const username = authUsername.value.trim();
+    const password = authPassword.value;
+    const auth = getAuth();
+
+    if (isSetupMode()) {
+      if (password !== authPasswordConfirm.value) {
+        authError.textContent = "As senhas não coincidem.";
+        return;
+      }
+      const passHash = await hashPassword(password);
+      setAuth(username, passHash);
+      sessionStorage.setItem(SESSION_KEY, "1");
+      showApp();
+      return;
+    }
+
+    const passHash = await hashPassword(password);
+    if (username !== auth.username || passHash !== auth.passHash) {
+      authError.textContent = "Usuário ou senha incorretos.";
+      return;
+    }
+    sessionStorage.setItem(SESSION_KEY, "1");
+    showApp();
+  });
+
+  authResetLink.addEventListener("click", () => {
+    if (
+      !confirm(
+        "Isso apaga apenas o usuário e senha de acesso (seus lançamentos financeiros continuam salvos). Deseja continuar?"
+      )
+    ) {
+      return;
+    }
+    localStorage.removeItem(AUTH_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
+    showAuthScreen();
+  });
+
+  logoutBtn.addEventListener("click", () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    showAuthScreen();
+  });
 
   const CATEGORIES = [
     {
@@ -224,5 +346,9 @@
     renderSummary();
   }
 
-  render();
+  if (getAuth() && sessionStorage.getItem(SESSION_KEY) === "1") {
+    showApp();
+  } else {
+    showAuthScreen();
+  }
 })();
