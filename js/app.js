@@ -128,14 +128,14 @@
   const CATEGORIES = [
     {
       id: "fixedIncome",
-      title: "Crédito Fixo",
+      title: "Entradas Fixas",
       type: "income",
       fixed: true,
       accent: "var(--color-fixed-accent)",
     },
     {
       id: "variableIncome",
-      title: "Crédito Variável",
+      title: "Entradas Variáveis",
       type: "income",
       fixed: false,
       accent: "var(--color-variable-accent)",
@@ -148,8 +148,22 @@
       accent: "var(--color-fixed-accent)",
     },
     {
+      id: "creditFixed",
+      title: "Crédito Fixo",
+      type: "expense",
+      fixed: true,
+      accent: "var(--color-fixed-accent)",
+    },
+    {
       id: "variableExpense",
       title: "Despesas Variáveis",
+      type: "expense",
+      fixed: false,
+      accent: "var(--color-variable-accent)",
+    },
+    {
+      id: "creditVariable",
+      title: "Crédito Variável",
       type: "expense",
       fixed: false,
       accent: "var(--color-variable-accent)",
@@ -163,15 +177,19 @@
   const DEFAULT_SPECS = {
     empresa: {
       fixedIncome: [],
-      fixedExpense: ["Água", "Luz"],
       variableIncome: [],
+      fixedExpense: ["Água", "Luz"],
+      creditFixed: [],
       variableExpense: [],
+      creditVariable: [],
     },
     pessoal: {
       fixedIncome: [],
-      fixedExpense: ["Água", "Luz"],
       variableIncome: [],
+      fixedExpense: ["Água", "Luz"],
+      creditFixed: [],
       variableExpense: ["Mercado", "Gasolina/Uber", "Lazer", "Presentes", "iFood"],
+      creditVariable: [],
     },
   };
 
@@ -458,7 +476,7 @@
     transferDetailEl.textContent =
       businessBalance < 0
         ? "A empresa está com saldo negativo neste mês — nenhum repasse automático."
-        : "Saldo do mês empresarial (créditos − despesas), somado automaticamente ao saldo pessoal.";
+        : "Saldo do mês empresarial (entradas − despesas), somado automaticamente ao saldo pessoal.";
   }
 
   function renderSummary() {
@@ -609,7 +627,7 @@
     if (!chatPanel.hidden) {
       if (!chatGreeted) {
         addChatMessage(
-          "Oi! Me conta o que você gastou ou recebeu, tipo:\n\"gastei 45 no mercado\"\n\"recebi 3000 de salário\"\n\"paguei 120 de luz\"",
+          "Oi! Me conta o que você gastou ou recebeu, tipo:\n\"gastei 45 no mercado\"\n\"recebi 3000 de salário\"\n\"paguei 120 de luz\"\n\"paguei 80 no cartão de streaming\"",
           "bot"
         );
         chatGreeted = true;
@@ -622,19 +640,31 @@
     chatPanel.hidden = true;
   });
 
-  const EXPENSE_WORDS = ["gastei", "gasto", "paguei", "pagar", "comprei", "debitei", "saiu", "despesa"];
+  const EXPENSE_WORDS = [
+    "gastei",
+    "gasto",
+    "paguei",
+    "pagar",
+    "comprei",
+    "debitei",
+    "saiu",
+    "despesa",
+    "cartão",
+    "cartao",
+    "credito",
+    "crédito",
+  ];
   const INCOME_WORDS = [
     "recebi",
     "receber",
     "ganhei",
     "ganho",
     "entrou",
+    "entrada",
     "faturei",
     "faturamento",
     "vendi",
     "receita",
-    "credito",
-    "crédito",
     "renda",
     "caiu",
   ];
@@ -675,18 +705,31 @@
       }
     }
 
-    const prepMatch = lowerText.match(/\b(?:em|no|na|de|do|da|com)\s+([a-zà-ú0-9/\s]+)/i);
-    if (!prepMatch) return null;
+    const prepRegex = /\b(?:em|no|na|de|do|da|com)\s+/gi;
+    let prepEnd = -1;
+    let match;
+    while ((match = prepRegex.exec(lowerText)) !== null) {
+      prepEnd = match.index + match[0].length;
+    }
+    if (prepEnd === -1) return null;
 
-    let candidate = prepMatch[1]
+    let candidate = lowerText
+      .slice(prepEnd)
       .replace(/\d+(?:[.,]\d+)?/g, "")
-      .replace(/\b(empresa|empresarial|pessoal)\b/g, "")
+      .replace(/\b(empresa|empresarial|pessoal|cart[aã]o|cr[eé]dito)\b/g, "")
       .replace(/\s+/g, " ")
       .trim();
     if (!candidate) return null;
 
     const name = candidate.charAt(0).toUpperCase() + candidate.slice(1);
-    const categoryId = type === "income" ? "variableIncome" : "variableExpense";
+    let categoryId;
+    if (type === "income") {
+      categoryId = "variableIncome";
+    } else if (/\bcart[aã]o\b|\bcr[eé]dito\b/.test(lowerText)) {
+      categoryId = "creditVariable";
+    } else {
+      categoryId = "variableExpense";
+    }
     return { categoryId, spec: name, isNew: true };
   }
 
@@ -702,7 +745,7 @@
     }
     if (!type) {
       addChatMessage(
-        "Foi um ganho ou um gasto? Use palavras como \"gastei\"/\"paguei\" para despesa ou \"recebi\"/\"ganhei\" para crédito.",
+        "Foi uma entrada ou um gasto? Use palavras como \"gastei\"/\"paguei\" para despesa ou \"recebi\"/\"ganhei\" para entrada.",
         "bot"
       );
       return;
@@ -740,7 +783,7 @@
     const category = CATEGORIES.find((c) => c.id === categoryId);
     const contextLabel = context === "empresa" ? "Empresa" : "Pessoal";
     addChatMessage(
-      `✅ Registrei ${type === "income" ? "um crédito" : "uma despesa"} de ${formatCurrency(
+      `✅ Registrei ${type === "income" ? "uma entrada" : "uma despesa"} de ${formatCurrency(
         value
       )} em "${spec}" (${contextLabel} · ${category.title}).`,
       "bot"
