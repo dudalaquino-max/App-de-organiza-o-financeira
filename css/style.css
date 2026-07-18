@@ -58,6 +58,22 @@ body {
 .header-inner h1 {
   font-size: 1.4rem;
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-icon {
+  border-radius: 50%;
+  display: block;
+}
+
+.profile-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  display: block;
 }
 
 .month-picker {
@@ -135,6 +151,10 @@ body {
   font-size: 1.3rem;
   margin: 0 0 2px;
   text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 .auth-subtitle {
