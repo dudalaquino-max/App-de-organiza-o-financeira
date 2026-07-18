@@ -696,12 +696,25 @@
   ];
 
   function parseChatValue(text) {
-    const match = text.match(/(\d{1,3}(?:\.\d{3})+,\d{2}|\d+,\d{1,2}|\d+\.\d{1,2}|\d+)/);
+    const match = text.match(/\d[\d.,]*\d|\d/);
     if (!match) return null;
-    let raw = match[1];
+    let raw = match[0];
+
     if (raw.includes(",")) {
+      // comma is the decimal separator; any dots are thousand separators
       raw = raw.replace(/\./g, "").replace(",", ".");
+    } else {
+      const dotParts = raw.split(".");
+      if (dotParts.length > 2) {
+        // more than one dot: all of them are thousand separators (e.g. 1.234.567)
+        raw = dotParts.join("");
+      } else if (dotParts.length === 2 && dotParts[1].length === 3) {
+        // exactly 3 digits after a single dot: thousand separator, not cents (e.g. 13.000)
+        raw = dotParts.join("");
+      }
+      // otherwise (1-2 digits after the dot) treat the dot as a decimal separator
     }
+
     const value = parseFloat(raw);
     return !isNaN(value) && value > 0 ? value : null;
   }
