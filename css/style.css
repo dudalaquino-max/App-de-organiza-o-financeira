@@ -343,6 +343,19 @@ body {
   white-space: nowrap;
 }
 
+.board-group {
+  margin-bottom: 24px;
+}
+
+.board-group-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+  margin: 0 0 10px;
+}
+
 .board {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));

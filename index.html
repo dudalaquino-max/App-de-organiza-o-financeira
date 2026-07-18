@@ -85,13 +85,27 @@
     <span class="transfer-value" id="transfer-value">R$ 0,00</span>
   </section>
 
-  <section class="board" id="board">
-    <!-- Category cards are injected by js/app.js -->
-  </section>
+  <div id="entries-view">
+    <section class="board-group">
+      <h3 class="board-group-title">💰 Créditos (entradas)</h3>
+      <div class="board" id="board-income"></div>
+    </section>
+    <section class="board-group">
+      <h3 class="board-group-title">💸 Despesas (saídas)</h3>
+      <div class="board" id="board-expense"></div>
+    </section>
+  </div>
 
-  <section class="report-board" id="report-board" hidden>
-    <!-- Report cards are injected by js/app.js -->
-  </section>
+  <div id="report-view" hidden>
+    <section class="board-group">
+      <h3 class="board-group-title">💰 Créditos (entradas)</h3>
+      <div class="report-board" id="report-board-income"></div>
+    </section>
+    <section class="board-group">
+      <h3 class="board-group-title">💸 Despesas (saídas)</h3>
+      <div class="report-board" id="report-board-expense"></div>
+    </section>
+  </div>
 
 </main>
 

@@ -134,18 +134,18 @@
       accent: "var(--color-fixed-accent)",
     },
     {
-      id: "fixedExpense",
-      title: "Despesas Fixas",
-      type: "expense",
-      fixed: true,
-      accent: "var(--color-fixed-accent)",
-    },
-    {
       id: "variableIncome",
       title: "Crédito Variável",
       type: "income",
       fixed: false,
       accent: "var(--color-variable-accent)",
+    },
+    {
+      id: "fixedExpense",
+      title: "Despesas Fixas",
+      type: "expense",
+      fixed: true,
+      accent: "var(--color-fixed-accent)",
     },
     {
       id: "variableExpense",
@@ -248,11 +248,12 @@
   });
 
   let currentView = "entries";
-  const reportBoard = document.getElementById("report-board");
+  const entriesView = document.getElementById("entries-view");
+  const reportView = document.getElementById("report-view");
 
   function applyViewVisibility() {
-    board.hidden = currentView !== "entries";
-    reportBoard.hidden = currentView !== "report";
+    entriesView.hidden = currentView !== "entries";
+    reportView.hidden = currentView !== "report";
   }
 
   document.querySelectorAll(".view-tab").forEach((btn) => {
@@ -299,7 +300,8 @@
     return Math.max(0, getContextTotals("empresa", month).balance);
   }
 
-  const board = document.getElementById("board");
+  const boardIncome = document.getElementById("board-income");
+  const boardExpense = document.getElementById("board-expense");
   const cardTemplate = document.getElementById("category-card-template");
 
   const NEW_SPEC_VALUE = "__new__";
@@ -554,22 +556,29 @@
     return node;
   }
 
+  const reportBoardIncome = document.getElementById("report-board-income");
+  const reportBoardExpense = document.getElementById("report-board-expense");
+
   function renderReport() {
-    reportBoard.innerHTML = "";
+    reportBoardIncome.innerHTML = "";
+    reportBoardExpense.innerHTML = "";
     CATEGORIES.forEach((category) => {
-      reportBoard.appendChild(buildReportCard(category));
+      const target = category.type === "income" ? reportBoardIncome : reportBoardExpense;
+      target.appendChild(buildReportCard(category));
     });
     if (currentContext === "pessoal") {
-      reportBoard.appendChild(buildTransferReportCard());
+      reportBoardIncome.appendChild(buildTransferReportCard());
     }
   }
 
   function render() {
-    board.innerHTML = "";
+    boardIncome.innerHTML = "";
+    boardExpense.innerHTML = "";
     CATEGORIES.forEach((category) => {
       const node = buildCard(category);
-      board.appendChild(node);
-      const article = board.querySelector(
+      const target = category.type === "income" ? boardIncome : boardExpense;
+      target.appendChild(node);
+      const article = target.querySelector(
         `.category-card[data-category-id="${category.id}"]`
       );
       fillEntryList(article, category);
