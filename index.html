@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Organização Financeira</title>
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icon-180.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<section id="auth-screen" class="auth-screen">
+  <form id="auth-form" class="auth-card">
+    <h1 class="auth-title"><img src="assets/icon-192.png" class="app-icon" alt="" width="28" height="28"> Organização Financeira</h1>
+    <p class="auth-subtitle" id="auth-subtitle">Crie seu acesso para começar.</p>
+
+    <label class="auth-label" for="auth-username">Usuário</label>
+    <input type="text" id="auth-username" class="auth-input" autocomplete="username" required maxlength="40">
+
+    <label class="auth-label" for="auth-password">Senha</label>
+    <input type="password" id="auth-password" class="auth-input" autocomplete="current-password" required minlength="4">
+
+    <label class="auth-label" for="auth-password-confirm" id="auth-confirm-label">Confirmar senha</label>
+    <input type="password" id="auth-password-confirm" class="auth-input" autocomplete="new-password" minlength="4">
+
+    <p class="auth-error" id="auth-error"></p>
+
+    <button type="submit" class="btn-add" id="auth-submit">Criar acesso</button>
+    <button type="button" class="auth-reset-link" id="auth-reset-link">Esqueceu a senha? Redefinir acesso</button>
+  </form>
+</section>
+
+<div id="app-shell" hidden>
+
+<header class="app-header">
+  <div class="header-inner">
+    <h1><img src="assets/icon-192.png" class="app-icon" alt="" width="28" height="28"> Organização Financeira</h1>
+    <div class="month-picker">
+      <label for="month-input">Mês de referência</label>
+      <input type="month" id="month-input">
+    </div>
+    <div class="session-info">
+      <img src="assets/icon-192.png" class="profile-avatar" alt="">
+      <span id="current-username"></span>
+      <button type="button" id="logout-btn" class="logout-btn">Sair</button>
+    </div>
+  </div>
+
+  <nav class="context-tabs" role="tablist">
+    <button class="context-tab active" data-context="empresa" role="tab" aria-selected="true">🏢 Empresa</button>
+    <button class="context-tab" data-context="pessoal" role="tab" aria-selected="false">🙋 Pessoal</button>
+  </nav>
+
+  <nav class="view-tabs" role="tablist">
+    <button class="view-tab active" data-view="entries" role="tab" aria-selected="true">📋 Lançamentos</button>
+    <button class="view-tab" data-view="report" role="tab" aria-selected="false">📊 Relatório do mês</button>
+  </nav>
+</header>
+
+<main id="app-main">
+
+  <section class="summary-bar">
+    <div class="summary-card income">
+      <span class="summary-label">Entradas do mês</span>
+      <span class="summary-value" id="summary-income">R$ 0,00</span>
+    </div>
+    <div class="summary-card expense">
+      <span class="summary-label">Despesas do mês</span>
+      <span class="summary-value" id="summary-expense">R$ 0,00</span>
+    </div>
+    <div class="summary-card balance">
+      <span class="summary-label">Saldo do mês</span>
+      <span class="summary-value" id="summary-balance">R$ 0,00</span>
+    </div>
+  </section>
+
+  <section class="transfer-banner" id="business-transfer-banner" hidden>
+    <span class="transfer-icon" aria-hidden="true">🏢➜🙋</span>
+    <div class="transfer-text">
+      <strong>Repasse da Empresa</strong>
+      <span id="transfer-detail">Somado automaticamente ao saldo pessoal.</span>
+    </div>
+    <span class="transfer-value" id="transfer-value">R$ 0,00</span>
+  </section>
+
+  <div id="entries-view">
+    <section class="board-group">
+      <h3 class="board-group-title">💰 Entradas</h3>
+      <div class="board" id="board-income"></div>
+    </section>
+    <section class="board-group">
+      <h3 class="board-group-title">💸 Despesas</h3>
+      <div class="board" id="board-expense"></div>
+    </section>
+  </div>
+
+  <div id="report-view" hidden>
+    <section class="board-group">
+      <h3 class="board-group-title">💰 Entradas</h3>
+      <div class="report-board" id="report-board-income"></div>
+    </section>
+    <section class="board-group">
+      <h3 class="board-group-title">💸 Despesas</h3>
+      <div class="report-board" id="report-board-expense"></div>
+    </section>
+  </div>
+
+</main>
+
+<template id="category-card-template">
+  <article class="category-card">
+    <header class="category-header">
+      <h2 class="category-title"></h2>
+      <span class="category-total"></span>
+    </header>
+
+    <form class="entry-form">
+      <select class="entry-description" required></select>
+      <input type="number" class="entry-value" placeholder="Valor (R$)" step="0.01" min="0.01" required>
+      <input type="date" class="entry-date" required>
+      <button type="submit" class="btn-add">Adicionar</button>
+    </form>
+
+    <ul class="entry-list"></ul>
+    <p class="empty-hint">Nenhum lançamento neste mês.</p>
+  </article>
+</template>
+
+<template id="report-card-template">
+  <article class="report-card">
+    <header class="category-header">
+      <h2 class="category-title"></h2>
+      <span class="category-total"></span>
+    </header>
+    <ul class="report-list"></ul>
+    <p class="empty-hint">Nenhum lançamento neste mês.</p>
+  </article>
+</template>
+
+<button type="button" id="chat-toggle" class="chat-toggle" aria-label="Abrir chat de lançamento rápido">💬</button>
+
+<div id="chat-panel" class="chat-panel" hidden>
+  <header class="chat-header">
+    <span>💬 Lançamento rápido</span>
+    <button type="button" id="chat-close" class="chat-close" aria-label="Fechar chat">✕</button>
+  </header>
+  <div class="chat-messages" id="chat-messages"></div>
+  <form id="chat-form" class="chat-form">
+    <input type="text" id="chat-input" placeholder="Ex: gastei 45 no mercado" autocomplete="off" maxlength="140">
+    <button type="submit" class="btn-add">Enviar</button>
+  </form>
+</div>
+
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
