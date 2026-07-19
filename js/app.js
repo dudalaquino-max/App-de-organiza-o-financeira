@@ -168,6 +168,7 @@
       type: "income",
       fixed: true,
       accent: "var(--color-fixed-accent)",
+      contexts: ["empresa", "pessoal"],
     },
     {
       id: "variableIncome",
@@ -175,6 +176,7 @@
       type: "income",
       fixed: false,
       accent: "var(--color-variable-accent)",
+      contexts: ["empresa", "pessoal"],
     },
     {
       id: "fixedExpense",
@@ -182,6 +184,7 @@
       type: "expense",
       fixed: true,
       accent: "var(--color-fixed-accent)",
+      contexts: ["empresa", "pessoal"],
     },
     {
       id: "creditFixed",
@@ -189,6 +192,7 @@
       type: "expense",
       fixed: true,
       accent: "var(--color-fixed-accent)",
+      contexts: ["pessoal"],
     },
     {
       id: "variableExpense",
@@ -196,6 +200,7 @@
       type: "expense",
       fixed: false,
       accent: "var(--color-variable-accent)",
+      contexts: ["empresa", "pessoal"],
     },
     {
       id: "creditVariable",
@@ -203,8 +208,13 @@
       type: "expense",
       fixed: false,
       accent: "var(--color-variable-accent)",
+      contexts: ["pessoal"],
     },
   ];
+
+  function categoriesForContext(context) {
+    return CATEGORIES.filter((c) => c.contexts.includes(context));
+  }
 
   const CONTEXTS = ["empresa", "pessoal"];
 
@@ -339,11 +349,12 @@
   }
 
   function getContextTotals(context, month = currentMonth) {
-    const income = CATEGORIES.filter((c) => c.type === "income").reduce(
+    const categories = categoriesForContext(context);
+    const income = categories.filter((c) => c.type === "income").reduce(
       (sum, c) => sum + categoryTotal(c, context, month),
       0
     );
-    const expense = CATEGORIES.filter((c) => c.type === "expense").reduce(
+    const expense = categories.filter((c) => c.type === "expense").reduce(
       (sum, c) => sum + categoryTotal(c, context, month),
       0
     );
@@ -587,11 +598,12 @@
   }
 
   function renderSummary() {
-    const baseIncome = CATEGORIES.filter((c) => c.type === "income").reduce(
+    const categories = categoriesForContext(currentContext);
+    const baseIncome = categories.filter((c) => c.type === "income").reduce(
       (sum, c) => sum + categoryTotal(c),
       0
     );
-    const expense = CATEGORIES.filter((c) => c.type === "expense").reduce(
+    const expense = categories.filter((c) => c.type === "expense").reduce(
       (sum, c) => sum + categoryTotal(c),
       0
     );
@@ -687,7 +699,7 @@
   function renderReport() {
     reportBoardIncome.innerHTML = "";
     reportBoardExpense.innerHTML = "";
-    CATEGORIES.forEach((category) => {
+    categoriesForContext(currentContext).forEach((category) => {
       const target = category.type === "income" ? reportBoardIncome : reportBoardExpense;
       target.appendChild(buildReportCard(category));
     });
@@ -699,7 +711,7 @@
   function render() {
     boardIncome.innerHTML = "";
     boardExpense.innerHTML = "";
-    CATEGORIES.forEach((category) => {
+    categoriesForContext(currentContext).forEach((category) => {
       const node = buildCard(category);
       const target = category.type === "income" ? boardIncome : boardExpense;
       target.appendChild(node);
@@ -815,7 +827,9 @@
   }
 
   function detectChatSpec(lowerText, context, type) {
-    const candidateCategoryIds = CATEGORIES.filter((c) => c.type === type).map((c) => c.id);
+    const candidateCategoryIds = categoriesForContext(context)
+      .filter((c) => c.type === type)
+      .map((c) => c.id);
 
     for (const catId of candidateCategoryIds) {
       for (const spec of specsState[context][catId]) {
@@ -845,7 +859,7 @@
     let categoryId;
     if (type === "income") {
       categoryId = "variableIncome";
-    } else if (/\bcart[aã]o\b|\bcr[eé]dito\b/.test(lowerText)) {
+    } else if (context === "pessoal" && /\bcart[aã]o\b|\bcr[eé]dito\b/.test(lowerText)) {
       categoryId = "creditVariable";
     } else {
       categoryId = "variableExpense";
