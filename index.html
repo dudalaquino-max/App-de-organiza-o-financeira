@@ -131,8 +131,17 @@
       <button type="submit" class="btn-add">Adicionar</button>
     </form>
 
-    <ul class="entry-list"></ul>
-    <p class="empty-hint">Nenhum lançamento neste mês.</p>
+    <div class="entries-panel">
+      <button type="button" class="entries-toggle">
+        <span class="entries-toggle-arrow">▸</span>
+        <span>Lançamentos</span>
+        <span class="entries-count"></span>
+      </button>
+      <div class="entries-body" hidden>
+        <ul class="entry-list"></ul>
+        <p class="empty-hint">Nenhum lançamento neste mês.</p>
+      </div>
+    </div>
 
     <div class="specs-panel">
       <button type="button" class="specs-toggle">

@@ -402,6 +402,15 @@
     const specSelect = form.querySelector(".entry-description");
     populateSpecSelect(specSelect, category);
 
+    const entriesToggle = node.querySelector(".entries-toggle");
+    const entriesBody = node.querySelector(".entries-body");
+
+    entriesToggle.addEventListener("click", () => {
+      const wasHidden = entriesBody.hidden;
+      entriesBody.hidden = !wasHidden;
+      entriesToggle.classList.toggle("expanded", wasHidden);
+    });
+
     const specsToggle = node.querySelector(".specs-toggle");
     const specsList = node.querySelector(".specs-list");
     const specsCount = node.querySelector(".specs-count");
@@ -507,10 +516,12 @@
   function fillEntryList(article, category) {
     const list = article.querySelector(".entry-list");
     const hint = article.querySelector(".empty-hint");
+    const entriesCount = article.querySelector(".entries-count");
     const entries = entriesForCategory(category).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
 
     list.innerHTML = "";
     hint.style.display = entries.length ? "none" : "block";
+    entriesCount.textContent = `(${entries.length})`;
 
     entries.forEach((entry) => {
       const li = document.createElement("li");

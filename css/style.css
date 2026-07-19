@@ -557,7 +557,13 @@ body {
   margin-top: 2px;
 }
 
-.specs-toggle {
+.entries-panel {
+  border-top: 1px solid var(--color-border);
+  padding-top: 8px;
+}
+
+.specs-toggle,
+.entries-toggle {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -572,23 +578,31 @@ body {
   text-align: left;
 }
 
-.specs-toggle:hover {
+.specs-toggle:hover,
+.entries-toggle:hover {
   color: var(--color-text);
 }
 
-.specs-toggle-arrow {
+.specs-toggle-arrow,
+.entries-toggle-arrow {
   display: inline-block;
   transition: transform 0.15s;
   font-size: 0.75rem;
 }
 
-.specs-toggle.expanded .specs-toggle-arrow {
+.specs-toggle.expanded .specs-toggle-arrow,
+.entries-toggle.expanded .entries-toggle-arrow {
   transform: rotate(90deg);
 }
 
-.specs-count {
+.specs-count,
+.entries-count {
   color: var(--color-muted);
   font-weight: 400;
+}
+
+.entries-body {
+  margin-top: 8px;
 }
 
 .specs-list {
