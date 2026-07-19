@@ -392,6 +392,65 @@
     const specSelect = form.querySelector(".entry-description");
     populateSpecSelect(specSelect, category);
 
+    const specsToggle = node.querySelector(".specs-toggle");
+    const specsList = node.querySelector(".specs-list");
+    const specsCount = node.querySelector(".specs-count");
+
+    function renderSpecsList() {
+      const specs = specsState[currentContext][category.id];
+      specsCount.textContent = `(${specs.length})`;
+      specsList.innerHTML = "";
+
+      if (!specs.length) {
+        const empty = document.createElement("li");
+        empty.className = "specs-empty";
+        empty.textContent = "Nenhuma especificação criada ainda.";
+        specsList.appendChild(empty);
+        return;
+      }
+
+      specs.forEach((spec) => {
+        const chip = document.createElement("li");
+        chip.className = "spec-chip";
+
+        const label = document.createElement("span");
+        label.textContent = spec;
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "spec-chip-delete";
+        delBtn.textContent = "✕";
+        delBtn.title = `Excluir "${spec}"`;
+        delBtn.addEventListener("click", () => {
+          if (
+            !confirm(
+              `Excluir a especificação "${spec}"? Lançamentos já criados com ela continuam salvos, só não vai mais aparecer como opção em novos lançamentos.`
+            )
+          ) {
+            return;
+          }
+          specsState[currentContext][category.id] = specsState[currentContext][category.id].filter(
+            (s) => s !== spec
+          );
+          saveSpecs();
+          renderSpecsList();
+          populateSpecSelect(specSelect, category);
+        });
+
+        chip.appendChild(label);
+        chip.appendChild(delBtn);
+        specsList.appendChild(chip);
+      });
+    }
+
+    renderSpecsList();
+
+    specsToggle.addEventListener("click", () => {
+      const wasHidden = specsList.hidden;
+      specsList.hidden = !wasHidden;
+      specsToggle.classList.toggle("expanded", wasHidden);
+    });
+
     specSelect.addEventListener("change", () => {
       if (specSelect.value !== NEW_SPEC_VALUE) return;
       const name = (window.prompt("Nome da nova especificação:") || "").trim();
@@ -407,6 +466,7 @@
       }
       populateSpecSelect(specSelect, category);
       specSelect.value = exists ? specs.find((s) => s.toLowerCase() === name.toLowerCase()) : name;
+      renderSpecsList();
     });
 
     const dateInput = form.querySelector(".entry-date");
