@@ -22,10 +22,16 @@
     <input type="text" id="auth-username" class="auth-input" autocomplete="username" required maxlength="40">
 
     <label class="auth-label" for="auth-password">Senha</label>
-    <input type="password" id="auth-password" class="auth-input" autocomplete="current-password" required minlength="4">
+    <div class="password-field">
+      <input type="password" id="auth-password" class="auth-input" autocomplete="current-password" required minlength="4">
+      <button type="button" class="password-toggle" data-target="auth-password" aria-label="Mostrar senha">👁️</button>
+    </div>
 
     <label class="auth-label" for="auth-password-confirm" id="auth-confirm-label">Confirmar senha</label>
-    <input type="password" id="auth-password-confirm" class="auth-input" autocomplete="new-password" minlength="4">
+    <div class="password-field">
+      <input type="password" id="auth-password-confirm" class="auth-input" autocomplete="new-password" minlength="4">
+      <button type="button" class="password-toggle" data-target="auth-password-confirm" aria-label="Mostrar senha">👁️</button>
+    </div>
 
     <p class="auth-error" id="auth-error"></p>
 

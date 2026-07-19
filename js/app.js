@@ -151,6 +151,16 @@
     showAuthScreen();
   });
 
+  document.querySelectorAll(".password-toggle").forEach((btn) => {
+    const input = document.getElementById(btn.dataset.target);
+    btn.addEventListener("click", () => {
+      const showing = input.type === "text";
+      input.type = showing ? "password" : "text";
+      btn.textContent = showing ? "👁️" : "🙈";
+      btn.setAttribute("aria-label", showing ? "Mostrar senha" : "Esconder senha");
+    });
+  });
+
   const CATEGORIES = [
     {
       id: "fixedIncome",
