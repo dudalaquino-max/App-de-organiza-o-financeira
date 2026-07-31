@@ -361,15 +361,8 @@
     return { income, expense, balance: income - expense };
   }
 
-  function shiftMonth(monthStr, delta) {
-    const [year, month] = monthStr.split("-").map(Number);
-    const date = new Date(year, month - 1 + delta, 1);
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-  }
-
   function getBusinessTransfer(month = currentMonth) {
-    const previousMonth = shiftMonth(month, -1);
-    return Math.max(0, getContextTotals("empresa", previousMonth).balance);
+    return Math.max(0, getContextTotals("empresa", month).balance);
   }
 
   const boardIncome = document.getElementById("board-income");
@@ -597,12 +590,11 @@
     }
     transferBanner.hidden = false;
     transferValueEl.textContent = formatCurrency(transfer);
-    const previousMonth = shiftMonth(currentMonth, -1);
-    const businessBalance = getContextTotals("empresa", previousMonth).balance;
+    const businessBalance = getContextTotals("empresa").balance;
     transferDetailEl.textContent =
       businessBalance < 0
-        ? "A empresa ficou com saldo negativo no mês anterior — nenhum repasse automático."
-        : "Saldo do mês anterior da empresa (entradas − despesas), somado automaticamente ao saldo pessoal deste mês.";
+        ? "A empresa está com saldo negativo neste mês — nenhum repasse automático."
+        : "Saldo do mês empresarial (entradas − despesas), somado automaticamente ao saldo pessoal.";
   }
 
   function renderSummary() {
@@ -689,7 +681,7 @@
     li.className = "report-row";
     const specEl = document.createElement("span");
     specEl.className = "report-spec";
-    specEl.textContent = "Saldo empresarial do mês anterior";
+    specEl.textContent = "Saldo empresarial do mês";
     const valueEl = document.createElement("span");
     valueEl.className = "report-value";
     valueEl.textContent = formatCurrency(transfer);
