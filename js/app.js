@@ -340,6 +340,7 @@
 
   function entriesForCategory(category, context = currentContext, month = currentMonth) {
     const all = state[context][category.id];
+    if (category.fixed) return all;
     return all.filter((e) => e.date && e.date.slice(0, 7) === month);
   }
 
