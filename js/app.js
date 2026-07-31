@@ -339,7 +339,11 @@
   }
 
   function entriesForCategory(category, context = currentContext, month = currentMonth) {
-    return state[context][category.id];
+    const all = state[context][category.id];
+    if (category.fixed) {
+      return all.filter((e) => !e.date || e.date.slice(0, 7) <= month);
+    }
+    return all;
   }
 
   function categoryTotal(category, context = currentContext, month = currentMonth) {
