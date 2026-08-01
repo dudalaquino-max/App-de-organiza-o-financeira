@@ -1,0 +1,393 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------- Enums ----------
+
+enum TipoUsuario {
+  MORADOR
+  PRESTADOR
+  ADMIN
+}
+
+enum StatusBairro {
+  ATIVO
+  LISTA_ESPERA
+}
+
+enum TamanhoTerreno {
+  PEQUENO
+  MEDIO
+  GRANDE
+}
+
+enum TipoPessoa {
+  PF
+  PJ
+}
+
+enum CategoriaServico {
+  GRAMA
+  VIDROS
+  CALCADA
+  PINTURA
+  RACHADURA
+  PATIO
+  PISCINA
+  OUTRO
+}
+
+enum StatusAprovacaoPrestador {
+  PENDENTE
+  APROVADO
+  REPROVADO
+  SUSPENSO
+}
+
+enum StatusDocumento {
+  PENDENTE
+  VALIDADO
+  REJEITADO
+}
+
+enum StatusAssinatura {
+  ATIVA
+  CANCELADA
+  INADIMPLENTE
+}
+
+enum FormaPagamento {
+  PIX
+  CARTAO
+}
+
+enum StatusChamado {
+  ABERTO
+  ORCADO
+  APROVADO
+  AGENDADO
+  EM_EXECUCAO
+  CONCLUIDO
+  CANCELADO
+  DISPUTA
+}
+
+enum StatusOrcamento {
+  PENDENTE
+  APROVADO
+  RECUSADO
+}
+
+enum TipoAgendamento {
+  RECORRENTE
+  EVENTUAL
+}
+
+enum StatusAgendamento {
+  AGENDADO
+  EM_ANDAMENTO
+  CONCLUIDO
+  NAO_COMPARECEU
+}
+
+enum StatusPagamento {
+  PENDENTE
+  PAGO
+  ESTORNADO
+  FALHOU
+}
+
+enum DirecaoAvaliacao {
+  MORADOR_PARA_PRESTADOR
+  PRESTADOR_PARA_MORADOR
+}
+
+enum StatusDisputa {
+  ABERTA
+  EM_ANALISE
+  RESOLVIDA
+}
+
+// ---------- Core ----------
+
+model Usuario {
+  id           String      @id @default(cuid())
+  nome         String
+  email        String      @unique
+  telefone     String?
+  senhaHash    String
+  tipo         TipoUsuario
+  criadoEm     DateTime    @default(now())
+  atualizadoEm DateTime    @updatedAt
+
+  morador       Morador?
+  prestador     Prestador?
+  notificacoes  Notificacao[]
+
+  @@map("usuarios")
+}
+
+model Bairro {
+  id                String       @id @default(cuid())
+  nome              String
+  cidade            String
+  estado            String
+  status            StatusBairro @default(LISTA_ESPERA)
+  criadoEm          DateTime     @default(now())
+
+  casas             Casa[]
+  prestadores       PrestadorBairro[]
+  planos            PlanoAssinatura[]
+
+  @@unique([nome, cidade, estado])
+  @@map("bairros")
+}
+
+model Morador {
+  id              String  @id @default(cuid())
+  usuarioId       String  @unique
+  usuario         Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  cpf             String  @unique
+  asaasCustomerId String?
+
+  casas Casa[]
+
+  @@map("moradores")
+}
+
+model Casa {
+  id             String         @id @default(cuid())
+  moradorId      String
+  morador        Morador        @relation(fields: [moradorId], references: [id], onDelete: Cascade)
+  bairroId       String
+  bairro         Bairro         @relation(fields: [bairroId], references: [id])
+  endereco       String
+  cep            String
+  temPiscina     Boolean        @default(false)
+  tamanhoTerreno TamanhoTerreno
+  fotos          String[]       @default([])
+  criadoEm       DateTime       @default(now())
+
+  assinaturas   Assinatura[]
+  chamados      Chamado[]
+  agendamentos  Agendamento[]
+
+  @@map("casas")
+}
+
+model Prestador {
+  id                String                   @id @default(cuid())
+  usuarioId         String                   @unique
+  usuario           Usuario                  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tipoPessoa        TipoPessoa
+  cpfCnpj           String                   @unique
+  categorias        CategoriaServico[]
+  raioAtendimentoKm Int                      @default(10)
+  statusAprovacao   StatusAprovacaoPrestador @default(PENDENTE)
+  contaSplitId      String?
+  criadoEm          DateTime                 @default(now())
+
+  bairros       PrestadorBairro[]
+  documentos    DocumentoPrestador[]
+  orcamentos    Orcamento[]
+  agendamentos  Agendamento[]
+  pagamentos    Pagamento[]
+
+  @@map("prestadores")
+}
+
+model PrestadorBairro {
+  id          String    @id @default(cuid())
+  prestadorId String
+  prestador   Prestador @relation(fields: [prestadorId], references: [id], onDelete: Cascade)
+  bairroId    String
+  bairro      Bairro    @relation(fields: [bairroId], references: [id], onDelete: Cascade)
+
+  @@unique([prestadorId, bairroId])
+  @@map("prestador_bairros")
+}
+
+model DocumentoPrestador {
+  id              String          @id @default(cuid())
+  prestadorId     String
+  prestador       Prestador       @relation(fields: [prestadorId], references: [id], onDelete: Cascade)
+  tipo            String
+  urlArquivo      String
+  statusValidacao StatusDocumento @default(PENDENTE)
+  criadoEm        DateTime        @default(now())
+
+  @@map("documentos_prestador")
+}
+
+// ---------- Assinatura ----------
+
+model PlanoAssinatura {
+  id            String  @id @default(cuid())
+  bairroId      String?
+  bairro        Bairro? @relation(fields: [bairroId], references: [id])
+  nome          String
+  descricao     String?
+  servicosInclusos CategoriaServico[]
+
+  precoBaseP    Decimal @db.Decimal(10, 2)
+  precoBaseM    Decimal @db.Decimal(10, 2)
+  precoBaseG    Decimal @db.Decimal(10, 2)
+  adicionalPiscina Decimal @default(0) @db.Decimal(10, 2)
+
+  ativo         Boolean @default(true)
+  criadoEm      DateTime @default(now())
+
+  assinaturas   Assinatura[]
+
+  @@map("planos_assinatura")
+}
+
+model Assinatura {
+  id              String           @id @default(cuid())
+  casaId          String
+  casa            Casa             @relation(fields: [casaId], references: [id], onDelete: Cascade)
+  planoId         String
+  plano           PlanoAssinatura  @relation(fields: [planoId], references: [id])
+  valorMensal     Decimal          @db.Decimal(10, 2)
+  status          StatusAssinatura @default(ATIVA)
+  formaPagamento  FormaPagamento
+  dataInicio      DateTime         @default(now())
+  proximaCobranca DateTime?
+
+  pagamentos    Pagamento[]
+  agendamentos  Agendamento[]
+
+  @@map("assinaturas")
+}
+
+// ---------- Marketplace sob demanda ----------
+
+model Chamado {
+  id          String            @id @default(cuid())
+  casaId      String
+  casa        Casa              @relation(fields: [casaId], references: [id], onDelete: Cascade)
+  categoria   CategoriaServico
+  descricao   String
+  fotos       String[]          @default([])
+  status      StatusChamado     @default(ABERTO)
+  criadoEm    DateTime          @default(now())
+
+  orcamentos    Orcamento[]
+  agendamento   Agendamento?
+  pagamento     Pagamento?
+  disputas      Disputa[]
+
+  @@map("chamados")
+}
+
+model Orcamento {
+  id             String          @id @default(cuid())
+  chamadoId      String
+  chamado        Chamado         @relation(fields: [chamadoId], references: [id], onDelete: Cascade)
+  prestadorId    String
+  prestador      Prestador       @relation(fields: [prestadorId], references: [id])
+  valor          Decimal         @db.Decimal(10, 2)
+  prazoExecucao  String
+  observacoes    String?
+  status         StatusOrcamento @default(PENDENTE)
+  criadoEm       DateTime        @default(now())
+
+  @@map("orcamentos")
+}
+
+model Agendamento {
+  id             String            @id @default(cuid())
+  tipo           TipoAgendamento
+  assinaturaId   String?
+  assinatura     Assinatura?       @relation(fields: [assinaturaId], references: [id])
+  chamadoId      String?           @unique
+  chamado        Chamado?          @relation(fields: [chamadoId], references: [id])
+  prestadorId    String
+  prestador      Prestador         @relation(fields: [prestadorId], references: [id])
+  casaId         String
+  casa           Casa              @relation(fields: [casaId], references: [id])
+  dataHoraPrevista DateTime
+  checkinFoto    String?
+  checkinHora    DateTime?
+  checkoutFoto   String?
+  checkoutHora   DateTime?
+  status         StatusAgendamento @default(AGENDADO)
+  criadoEm       DateTime          @default(now())
+
+  avaliacoes  Avaliacao[]
+  disputas    Disputa[]
+
+  @@map("agendamentos")
+}
+
+// ---------- Financeiro ----------
+
+model Pagamento {
+  id                String          @id @default(cuid())
+  assinaturaId      String?
+  assinatura        Assinatura?     @relation(fields: [assinaturaId], references: [id])
+  chamadoId         String?         @unique
+  chamado           Chamado?        @relation(fields: [chamadoId], references: [id])
+  prestadorId       String?
+  prestador         Prestador?      @relation(fields: [prestadorId], references: [id])
+  valorBruto        Decimal         @db.Decimal(10, 2)
+  taxaPlataforma    Decimal         @db.Decimal(10, 2)
+  valorRepasse      Decimal         @db.Decimal(10, 2)
+  metodo            FormaPagamento
+  status            StatusPagamento @default(PENDENTE)
+  gatewayTransacaoId String?        @unique
+  linkPagamento     String?
+  dataPagamento     DateTime?
+  criadoEm          DateTime        @default(now())
+
+  @@map("pagamentos")
+}
+
+// ---------- Avaliação / Notificação / Disputa ----------
+
+model Avaliacao {
+  id            String            @id @default(cuid())
+  agendamentoId String
+  agendamento   Agendamento       @relation(fields: [agendamentoId], references: [id], onDelete: Cascade)
+  avaliadorId   String
+  avaliadoId    String
+  nota          Int
+  comentario    String?
+  direcao       DirecaoAvaliacao
+  criadoEm      DateTime          @default(now())
+
+  @@map("avaliacoes")
+}
+
+model Notificacao {
+  id        String   @id @default(cuid())
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  tipo      String
+  mensagem  String
+  lida      Boolean  @default(false)
+  criadoEm  DateTime @default(now())
+
+  @@map("notificacoes")
+}
+
+model Disputa {
+  id            String        @id @default(cuid())
+  chamadoId     String?
+  chamado       Chamado?      @relation(fields: [chamadoId], references: [id])
+  agendamentoId String?
+  agendamento   Agendamento?  @relation(fields: [agendamentoId], references: [id])
+  abertoPor     String
+  motivo        String
+  status        StatusDisputa @default(ABERTA)
+  resolucao     String?
+  criadoEm      DateTime      @default(now())
+
+  @@map("disputas")
+}
