@@ -298,7 +298,11 @@
 
   function entriesForCategory(category, context = currentContext, month = currentMonth) {
     const all = state[context][category.id];
-    return all.filter((e) => e.date && e.date.slice(0, 7) === month);
+    return all.filter((e) => {
+      const startMonth = e.date && e.date.slice(0, 7);
+      if (!startMonth || startMonth > month) return false;
+      return !e.endMonth || month < e.endMonth;
+    });
   }
 
   function categoryTotal(category, context = currentContext, month = currentMonth) {
@@ -515,12 +519,10 @@
 
       const delBtn = document.createElement("button");
       delBtn.className = "btn-delete";
-      delBtn.title = "Remover lançamento";
+      delBtn.title = "Excluir a partir deste mês (meses anteriores continuam como estavam)";
       delBtn.textContent = "✕";
       delBtn.addEventListener("click", () => {
-        state[currentContext][category.id] = state[currentContext][category.id].filter(
-          (e) => e.id !== entry.id
-        );
+        entry.endMonth = currentMonth;
         saveState();
         render();
       });
