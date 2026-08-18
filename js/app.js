@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "financeApp.v1";
+  const STORAGE_KEY = "financeApp.v2";
   const AUTH_KEY = "financeApp.auth";
   const SESSION_KEY = "financeApp.session";
   const THEME_KEY = "financeApp.theme";
@@ -163,52 +163,18 @@
 
   const CATEGORIES = [
     {
-      id: "fixedIncome",
-      title: "Entradas Fixas",
+      id: "income",
+      title: "Entradas",
       type: "income",
-      fixed: true,
-      accent: "var(--color-fixed-accent)",
+      accent: "var(--color-income)",
       contexts: ["empresa", "pessoal"],
     },
     {
-      id: "variableIncome",
-      title: "Entradas Variáveis",
-      type: "income",
-      fixed: false,
-      accent: "var(--color-variable-accent)",
+      id: "expense",
+      title: "Despesas",
+      type: "expense",
+      accent: "var(--color-expense)",
       contexts: ["empresa", "pessoal"],
-    },
-    {
-      id: "fixedExpense",
-      title: "Despesas Fixas",
-      type: "expense",
-      fixed: true,
-      accent: "var(--color-fixed-accent)",
-      contexts: ["empresa", "pessoal"],
-    },
-    {
-      id: "creditFixed",
-      title: "Crédito Fixo",
-      type: "expense",
-      fixed: true,
-      accent: "var(--color-fixed-accent)",
-      contexts: ["pessoal"],
-    },
-    {
-      id: "variableExpense",
-      title: "Despesas Variáveis",
-      type: "expense",
-      fixed: false,
-      accent: "var(--color-variable-accent)",
-      contexts: ["empresa", "pessoal"],
-    },
-    {
-      id: "creditVariable",
-      title: "Crédito Variável",
-      type: "expense",
-      fixed: false,
-      accent: "var(--color-variable-accent)",
-      contexts: ["pessoal"],
     },
   ];
 
@@ -218,24 +184,16 @@
 
   const CONTEXTS = ["empresa", "pessoal"];
 
-  const SPECS_KEY = "financeApp.specs";
+  const SPECS_KEY = "financeApp.specsV2";
 
   const DEFAULT_SPECS = {
     empresa: {
-      fixedIncome: [],
-      variableIncome: [],
-      fixedExpense: ["Água", "Luz"],
-      creditFixed: [],
-      variableExpense: [],
-      creditVariable: [],
+      income: [],
+      expense: ["Água", "Luz"],
     },
     pessoal: {
-      fixedIncome: [],
-      variableIncome: [],
-      fixedExpense: ["Água", "Luz"],
-      creditFixed: [],
-      variableExpense: ["Mercado", "Gasolina/Uber", "Lazer", "Presentes", "iFood"],
-      creditVariable: [],
+      income: [],
+      expense: ["Mercado", "Gasolina/Uber", "Lazer", "Presentes", "iFood", "Água", "Luz"],
     },
   };
 
@@ -340,7 +298,6 @@
 
   function entriesForCategory(category, context = currentContext, month = currentMonth) {
     const all = state[context][category.id];
-    if (category.fixed) return all;
     return all.filter((e) => e.date && e.date.slice(0, 7) === month);
   }
 
@@ -500,9 +457,7 @@
     });
 
     const dateInput = form.querySelector(".entry-date");
-    dateInput.value = category.fixed
-      ? `${currentMonth}-01`
-      : `${currentMonth}-${String(new Date().getDate()).padStart(2, "0")}`;
+    dateInput.value = `${currentMonth}-${String(new Date().getDate()).padStart(2, "0")}`;
 
     form.addEventListener("submit", (ev) => {
       ev.preventDefault();
@@ -856,14 +811,7 @@
     if (!candidate) return null;
 
     const name = candidate.charAt(0).toUpperCase() + candidate.slice(1);
-    let categoryId;
-    if (type === "income") {
-      categoryId = "variableIncome";
-    } else if (context === "pessoal" && /\bcart[aã]o\b|\bcr[eé]dito\b/.test(lowerText)) {
-      categoryId = "creditVariable";
-    } else {
-      categoryId = "variableExpense";
-    }
+    const categoryId = type === "income" ? "income" : "expense";
     return { categoryId, spec: name, isNew: true };
   }
 
