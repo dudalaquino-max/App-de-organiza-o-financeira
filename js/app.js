@@ -176,6 +176,13 @@
       accent: "var(--color-expense)",
       contexts: ["empresa", "pessoal"],
     },
+    {
+      id: "credit",
+      title: "Cartão de Crédito",
+      type: "expense",
+      accent: "var(--color-fixed-accent)",
+      contexts: ["empresa", "pessoal"],
+    },
   ];
 
   function categoriesForContext(context) {
@@ -190,10 +197,12 @@
     empresa: {
       income: [],
       expense: ["Água", "Luz"],
+      credit: [],
     },
     pessoal: {
       income: [],
       expense: ["Mercado", "Gasolina/Uber", "Lazer", "Presentes", "iFood", "Água", "Luz"],
+      credit: [],
     },
   };
 
@@ -813,7 +822,14 @@
     if (!candidate) return null;
 
     const name = candidate.charAt(0).toUpperCase() + candidate.slice(1);
-    const categoryId = type === "income" ? "income" : "expense";
+    let categoryId;
+    if (type === "income") {
+      categoryId = "income";
+    } else if (/\bcart[aã]o\b|\bcr[eé]dito\b/.test(lowerText)) {
+      categoryId = "credit";
+    } else {
+      categoryId = "expense";
+    }
     return { categoryId, spec: name, isNew: true };
   }
 
