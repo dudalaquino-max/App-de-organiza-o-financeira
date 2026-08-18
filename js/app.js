@@ -119,7 +119,7 @@
       }
       const passHash = await hashPassword(password);
       setAuth(username, passHash);
-      sessionStorage.setItem(SESSION_KEY, "1");
+      localStorage.setItem(SESSION_KEY, "1");
       showApp();
       return;
     }
@@ -129,7 +129,7 @@
       authError.textContent = "Usuário ou senha incorretos.";
       return;
     }
-    sessionStorage.setItem(SESSION_KEY, "1");
+    localStorage.setItem(SESSION_KEY, "1");
     showApp();
   });
 
@@ -142,12 +142,12 @@
       return;
     }
     localStorage.removeItem(AUTH_KEY);
-    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
     showAuthScreen();
   });
 
   logoutBtn.addEventListener("click", () => {
-    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem(SESSION_KEY);
     showAuthScreen();
   });
 
@@ -881,7 +881,7 @@
     handleChatMessage(text);
   });
 
-  if (getAuth() && sessionStorage.getItem(SESSION_KEY) === "1") {
+  if (getAuth() && localStorage.getItem(SESSION_KEY) === "1") {
     showApp();
   } else {
     showAuthScreen();
